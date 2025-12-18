@@ -1,0 +1,436 @@
+-- ========================================
+-- UNIVERSAL AUTO LOOP - FULL COMPLETE & MOBILE FIXED
+-- All Features + Custom Drag + Bigger Floating Button
+-- ========================================
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Settings
+local loopEnabled = false
+local loopSpeed = 0.1
+local uiState = "closed"  -- "closed", "minimized", "open"
+
+-- Default script
+local defaultScript = [[local args = {
+    {
+        Request = "SetStage",
+        Stage = 2
+    }
+}
+game:GetService("ReplicatedStorage"):WaitForChild("MainRemote"):FireServer(unpack(args))]]
+
+-- Custom Drag
+local dragInput, dragStart, startPos
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+-- ========================================
+-- UI
+-- ========================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "UniversalLoopUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+-- Floating Open Button (Besar + Pulse)
+local openButton = Instance.new("TextButton")
+openButton.Size = UDim2.new(0, 80, 0, 80)
+openButton.Position = UDim2.new(1, -90, 1, -90)
+openButton.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
+openButton.Text = "🔄"
+openButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+openButton.TextSize = 40
+openButton.Font = Enum.Font.GothamBold
+openButton.Parent = screenGui
+
+Instance.new("UICorner", openButton).CornerRadius = UDim.new(0, 40)
+local os = Instance.new("UIStroke", openButton)
+os.Color = Color3.fromRGB(255, 255, 255)
+os.Thickness = 3
+
+-- Pulse
+TweenService:Create(openButton, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Size = UDim2.new(0, 90, 0, 90)}):Play()
+
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 450, 0, 550)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -275)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 15)
+local ms = Instance.new("UIStroke", mainFrame)
+ms.Color = Color3.fromRGB(70, 130, 255)
+ms.Thickness = 3
+
+-- Header (Drag Area)
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 50)
+header.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+header.Parent = mainFrame
+Instance.new("UICorner", header).CornerRadius = UDim.new(0, 15)
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragInput and input == dragInput then
+        updateDrag(input)
+    end
+end)
+
+-- Title, Minimize, Close
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -170, 1, 0)
+titleLabel.Position = UDim2.new(0, 15, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🔄 UNIVERSAL AUTO LOOP"
+titleLabel.TextColor3 = Color3.fromRGB(70, 130, 255)
+titleLabel.TextSize = 20
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = header
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 40, 0, 40)
+minimizeButton.Position = UDim2.new(1, -90, 0, 5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+minimizeButton.Text = "–"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.TextSize = 28
+minimizeButton.Parent = header
+Instance.new("UICorner", minimizeButton).CornerRadius = UDim.new(0, 10)
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 40, 0, 40)
+closeButton.Position = UDim2.new(1, -45, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+closeButton.Text = "✕"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 20
+closeButton.Parent = header
+Instance.new("UICorner", closeButton).CornerRadius = UDim.new(0, 10)
+
+-- Content Scroll
+local contentScroll = Instance.new("ScrollingFrame")
+contentScroll.Size = UDim2.new(1, 0, 1, -50)
+contentScroll.Position = UDim2.new(0, 0, 0, 50)
+contentScroll.BackgroundTransparency = 1
+contentScroll.ScrollBarThickness = 8
+contentScroll.ScrollBarImageColor3 = Color3.fromRGB(70, 130, 255)
+contentScroll.CanvasSize = UDim2.new(0, 0, 0, 750)
+contentScroll.Parent = mainFrame
+
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -20, 0, 750)
+contentFrame.Position = UDim2.new(0, 10, 0, 10)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = contentScroll
+
+-- Status Bar
+local statusBar = Instance.new("Frame")
+statusBar.Size = UDim2.new(1, 0, 0, 45)
+statusBar.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+statusBar.Parent = contentFrame
+Instance.new("UICorner", statusBar).CornerRadius = UDim.new(0, 10)
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 1, 0)
+statusLabel.Position = UDim2.new(0, 10, 0, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "🔴 Status: STOPPED"
+statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+statusLabel.TextSize = 18
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = statusBar
+
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(1, 0, 0, 55)
+toggleButton.Position = UDim2.new(0, 0, 0, 55)
+toggleButton.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+toggleButton.Text = "▶️ START LOOP"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextSize = 20
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.Parent = contentFrame
+Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 12)
+
+-- Script Label & Box
+local scriptLabel = Instance.new("TextLabel")
+scriptLabel.Size = UDim2.new(1, 0, 0, 30)
+scriptLabel.Position = UDim2.new(0, 0, 0, 120)
+scriptLabel.BackgroundTransparency = 1
+scriptLabel.Text = "📝 YOUR SCRIPT:"
+scriptLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+scriptLabel.TextSize = 16
+scriptLabel.Font = Enum.Font.GothamBold
+scriptLabel.Parent = contentFrame
+
+local scriptBox = Instance.new("TextBox")
+scriptBox.Size = UDim2.new(1, 0, 0, 200)
+scriptBox.Position = UDim2.new(0, 0, 0, 155)
+scriptBox.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+scriptBox.Text = defaultScript
+scriptBox.TextColor3 = Color3.fromRGB(100, 255, 150)
+scriptBox.TextSize = 13
+scriptBox.Font = Enum.Font.Code
+scriptBox.MultiLine = true
+scriptBox.ClearTextOnFocus = false
+scriptBox.Parent = contentFrame
+Instance.new("UICorner", scriptBox).CornerRadius = UDim.new(0, 10)
+local scriptStroke = Instance.new("UIStroke", scriptBox)
+scriptStroke.Color = Color3.fromRGB(70, 130, 255)
+scriptStroke.Thickness = 2
+scriptStroke.Transparency = 0.5
+
+-- Script Buttons + Mobile Guide
+local scriptButtonsFrame = Instance.new("Frame")
+scriptButtonsFrame.Size = UDim2.new(1, 0, 0, 75)
+scriptButtonsFrame.Position = UDim2.new(0, 0, 0, 365)
+scriptButtonsFrame.BackgroundTransparency = 1
+scriptButtonsFrame.Parent = contentFrame
+
+local mobileGuide = Instance.new("TextLabel")
+mobileGuide.Size = UDim2.new(1, 0, 0, 20)
+mobileGuide.BackgroundTransparency = 1
+mobileGuide.Text = "📱 Mobile: Long press box → Paste"
+mobileGuide.TextColor3 = Color3.fromRGB(255, 255, 100)
+mobileGuide.TextSize = 14
+mobileGuide.Parent = scriptButtonsFrame
+
+local clearButton = Instance.new("TextButton")
+clearButton.Size = UDim2.new(0.31, -5, 0, 45)
+clearButton.Position = UDim2.new(0, 0, 0, 25)
+clearButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+clearButton.Text = "🗑️ Clear"
+clearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearButton.Parent = scriptButtonsFrame
+Instance.new("UICorner", clearButton).CornerRadius = UDim.new(0, 10)
+
+local copyButton = Instance.new("TextButton")
+copyButton.Size = UDim2.new(0.31, -5, 0, 45)
+copyButton.Position = UDim2.new(0.345, 0, 0, 25)
+copyButton.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
+copyButton.Text = "📋 Copy"
+copyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyButton.Parent = scriptButtonsFrame
+Instance.new("UICorner", copyButton).CornerRadius = UDim.new(0, 10)
+
+local defaultButton = Instance.new("TextButton")
+defaultButton.Size = UDim2.new(0.31, -5, 0, 45)
+defaultButton.Position = UDim2.new(0.69, 5, 0, 25)
+defaultButton.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+defaultButton.Text = "🔄 Default"
+defaultButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+defaultButton.Parent = scriptButtonsFrame
+Instance.new("UICorner", defaultButton).CornerRadius = UDim.new(0, 10)
+
+-- Speed Section
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1, 0, 0, 30)
+speedLabel.Position = UDim2.new(0, 0, 0, 450)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "⚡ LOOP SPEED: 0.1 seconds"
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.TextSize = 18
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.Parent = contentFrame
+
+local speedPresetsFrame = Instance.new("Frame")
+speedPresetsFrame.Size = UDim2.new(1, 0, 0, 50)
+speedPresetsFrame.Position = UDim2.new(0, 0, 0, 485)
+speedPresetsFrame.BackgroundTransparency = 1
+speedPresetsFrame.Parent = contentFrame
+
+local speedPresets = {
+    {name = "🐌 1.0s", speed = 1.0},
+    {name = "⚡ 0.1s", speed = 0.1},
+    {name = "🚀 0.01s", speed = 0.01},
+    {name = "💨 0.001s", speed = 0.001}
+}
+
+for i, preset in ipairs(speedPresets) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.24, -8, 1, 0)
+    btn.Position = UDim2.new((i-1)*0.25 + (i-1)*0.01, 0, 0, 0)
+    btn.BackgroundColor3 = (preset.speed == 0.1) and Color3.fromRGB(70, 130, 255) or Color3.fromRGB(45, 45, 60)
+    btn.Text = preset.name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamBold
+    btn.Parent = speedPresetsFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    
+    btn.Activated:Connect(function()
+        loopSpeed = preset.speed
+        speedLabel.Text = "⚡ LOOP SPEED: " .. preset.speed .. " seconds"
+        for _, child in pairs(speedPresetsFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+            end
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
+    end)
+end
+
+local customFrame = Instance.new("Frame")
+customFrame.Size = UDim2.new(1, 0, 0, 50)
+customFrame.Position = UDim2.new(0, 0, 0, 545)
+customFrame.BackgroundTransparency = 1
+customFrame.Parent = contentFrame
+
+local customLabel = Instance.new("TextLabel")
+customLabel.Size = UDim2.new(0, 120, 1, 0)
+customLabel.BackgroundTransparency = 1
+customLabel.Text = "Custom (s):"
+customLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+customLabel.Parent = customFrame
+
+local customBox = Instance.new("TextBox")
+customBox.Size = UDim2.new(0, 140, 1, -10)
+customBox.Position = UDim2.new(0, 125, 0, 5)
+customBox.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+customBox.Text = "0.1"
+customBox.TextColor3 = Color3.fromRGB(100, 255, 150)
+customBox.Parent = customFrame
+Instance.new("UICorner", customBox).CornerRadius = UDim.new(0, 8)
+
+local applyBtn = Instance.new("TextButton")
+applyBtn.Size = UDim2.new(0, 120, 1, -10)
+applyBtn.Position = UDim2.new(1, -120, 0, 5)
+applyBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
+applyBtn.Text = "✓ Apply"
+applyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+applyBtn.Parent = customFrame
+Instance.new("UICorner", applyBtn).CornerRadius = UDim.new(0, 8)
+
+-- ========================================
+-- FUNCTIONS
+-- ========================================
+local function updateUIState(state)
+    uiState = state
+    if state == "open" then
+        mainFrame.Visible = true
+        contentScroll.Visible = true
+        TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 450, 0, 550)}):Play()
+        minimizeButton.Text = "–"
+    elseif state == "minimized" then
+        contentScroll.Visible = false
+        TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 450, 0, 110)}):Play()
+        minimizeButton.Text = "+"
+    elseif state == "closed" then
+        mainFrame.Visible = false
+    end
+end
+
+openButton.Activated:Connect(function()
+    if uiState == "closed" then
+        updateUIState("open")
+    else
+        updateUIState("closed")
+    end
+end)
+
+minimizeButton.Activated:Connect(function()
+    if uiState == "open" then
+        updateUIState("minimized")
+    elseif uiState == "minimized" then
+        updateUIState("open")
+    end
+end)
+
+closeButton.Activated:Connect(function()
+    updateUIState("closed")
+end)
+
+clearButton.Activated:Connect(function()
+    scriptBox.Text = ""
+end)
+
+copyButton.Activated:Connect(function()
+    if setclipboard or toclipboard then
+        (setclipboard or toclipboard)(scriptBox.Text)
+        print("✅ Script copied to clipboard!")
+    else
+        warn("Executor tak support copy")
+    end
+end)
+
+defaultButton.Activated:Connect(function()
+    scriptBox.Text = defaultScript
+end)
+
+applyBtn.Activated:Connect(function()
+    local newSpeed = tonumber(customBox.Text)
+    if newSpeed and newSpeed > 0 then
+        loopSpeed = newSpeed
+        speedLabel.Text = "⚡ LOOP SPEED: " .. newSpeed .. " seconds"
+    end
+end)
+
+toggleButton.Activated:Connect(function()
+    loopEnabled = not loopEnabled
+    if loopEnabled then
+        toggleButton.Text = "⏸️ STOP LOOP"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+        statusLabel.Text = "🟢 Status: RUNNING (" .. loopSpeed .. "s)"
+        statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        ms.Color = Color3.fromRGB(100, 255, 100)
+    else
+        toggleButton.Text = "▶️ START LOOP"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+        statusLabel.Text = "🔴 Status: STOPPED"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        ms.Color = Color3.fromRGB(70, 130, 255)
+    end
+end)
+
+scriptBox.Focused:Connect(function()
+    scriptStroke.Transparency = 0
+end)
+scriptBox.FocusLost:Connect(function()
+    scriptStroke.Transparency = 0.5
+end)
+
+-- MAIN LOOP
+task.spawn(function()
+    while task.wait() do
+        if loopEnabled then
+            task.wait(loopSpeed)
+            local success, err = pcall(function()
+                local func, loadErr = loadstring(scriptBox.Text)
+                if func then
+                    func()
+                else
+                    warn("Script Error: " .. tostring(loadErr))
+                end
+            end)
+            if not success then
+                warn("Execution Error: " .. err)
+            end
+        end
+    end
+end)
+
+updateUIState("closed")
+print("✅ Universal Auto Loop FULLY LOADED! Klik button 🔄 besar untuk buka UI.")
