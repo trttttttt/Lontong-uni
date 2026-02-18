@@ -1,11 +1,11 @@
 -- ============================================================
--- MELAYU-HUB v32 — BY SIGMA
--- Fly + Noclip untuk Herb/Treasure/Altar/Mob/Quest/Ability
+-- MELAYU-HUB v33 — BY SIGMA
+-- Fly + Noclip for Herb/Treasure/Altar/Mob/Quest/Ability
 -- ============================================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MELAYU-HUB v32", LoadingTitle = "BY SIGMA",
+   Name = "MELAYU-HUB v33", LoadingTitle = "BY SIGMA",
    LoadingSubtitle = "LOADING...",
    ConfigurationSaving = { Enabled = true, FileName = "MelayuHub" },
    Discord = { Enabled = false }, KeySystem = false,
@@ -27,7 +27,7 @@ local Humanoid  = Character:WaitForChild("Humanoid")
 local flySpeed    = 150
 local mobDistance = 7
 local activeTween = nil
-local activeBV    = nil -- global BodyVelocity reference untuk stop fly instantly
+local activeBV    = nil -- global BodyVelocity reference to stop fly instantly
 
 local herbActive     = false
 local treasureActive = false
@@ -40,8 +40,8 @@ local abilityActive  = false
 local selectedHerb      = nil
 local selectedMob       = nil
 local selectedQuest     = nil
-local selectedTreasure  = {} -- table untuk multi-select
-local selectedBloodline = {} -- table untuk multi-select
+local selectedTreasure  = {} -- table for multi-select
+local selectedBloodline = {} -- table for multi-select
 local questLoopEnabled  = false
 local justRespawned     = false
 
@@ -68,7 +68,7 @@ Player.CharacterAdded:Connect(function(c)
         HRP.AssemblyLinearVelocity = Vector3.zero
     end
 
-    -- Resume noclip kalau ada farm aktif
+    -- Resume noclip if a farm is active
     if herbActive or treasureActive or altarActive or mobActive or questActive or abilityActive then
         noclipEnabled = true
     end
@@ -112,7 +112,7 @@ local function flyTo(targetPos, activeCheck)
     bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
     bv.Velocity  = Vector3.zero
     bv.Parent    = HRP
-    activeBV     = bv  -- store globally so stopFlyNoclip boleh kill instantly
+    activeBV     = bv  -- store globally so stopFlyNoclip can kill instantly
 
     local maxTime = 60
     local t0      = tick()
@@ -121,7 +121,7 @@ local function flyTo(targetPos, activeCheck)
     while tick() - t0 < maxTime do
         if activeCheck and not activeCheck() then break end
         if not HRP or not HRP.Parent then break end
-        if not bv or not bv.Parent then break end -- dah di-destroy oleh stop
+        if not bv or not bv.Parent then break end -- already destroyed by stop
 
         local currentPos = HRP.Position
         local dist       = (targetPos - currentPos).Magnitude
@@ -232,7 +232,7 @@ table.sort(recipeNames)
 local selectedRecipe = nil
 
 -- Element → semua herb dalam element tu, disusun dari base value TERTINGGI
--- Script auto guna herb yang base value paling tinggi untuk maximize craft success
+-- Script auto picks highest base value herb to maximize craft success
 local ELEMENT_HERBS = {
     Earth   = {"Taixian","Ginseng"},           -- Taixian(18) > Ginseng(8)
     Heaven  = {"Moonlight Flower","Qilin Berries"}, -- Moonlight(25) > Qilin(23)
@@ -251,14 +251,14 @@ local YEAR_MULTIPLIER = {
     ["Hundred Thousand"]=32,["Million"]=64,["Ten Million"]=128,
 }
 
--- Pilih herb terbaik (base value tertinggi) untuk element + year yang dipilih
--- selectedHerbOverride = table {element -> herbName} kalau user nak override
+-- Pick best herb (highest base value) for selected element + year
+-- selectedHerbOverride = table {element -> herbName} if user wants to override
 local selectedElementHerb = {} -- {Earth="Taixian", Heaven="Moonlight Flower", ...}
 
 local function getBestHerbForElement(element)
-    -- Kalau user dah pilih herb spesifik untuk element ni, guna tu
+    -- If user picked a specific herb for this element, use it
     if selectedElementHerb[element] then return selectedElementHerb[element] end
-    -- Kalau tak, guna yang base value paling tinggi (index 1)
+    -- Otherwise use highest base value herb (index 1)
     local herbs = ELEMENT_HERBS[element]
     return herbs and herbs[1] or "Ginseng"
 end
@@ -515,12 +515,12 @@ local function farmHerbs()
         local targetCF=getCF(zone)
         if not targetCF then task.wait(0.2); continue end
 
-        -- FLY ke herb zone
+        -- FLY to herb zone
         local reached=flyTo(targetCF.Position, function() return herbActive end)
         if not herbActive then break end
         if not reached then task.wait(0.2); continue end
 
-        -- Force in zone kalau slightly off
+        -- Force into zone if slightly off
         local attempt=0
         while not isPlayerInZone(zone) and attempt<10 and herbActive do
             attempt+=1
@@ -540,7 +540,7 @@ local function farmHerbs()
             herbCollectCount+=1
         end
     end
-    -- Stop noclip bila herb farm stop
+    -- Stop noclip when herb farm stops
     stopFlyNoclip()
 end
 
@@ -580,7 +580,7 @@ local function farmTreasures()
     setNoclip(true)
 
     while treasureActive do
-        -- Scan workspace.Treasures untuk nama yang match
+        -- Scan workspace.Treasures for matching names
         local treasure, dist = findNearest(folder, 0, treasureMatchesFilter)
 
         if not treasure then
@@ -594,12 +594,12 @@ local function farmTreasures()
         local cf = getCF(treasure)
         if not cf then task.wait(0.5); continue end
 
-        -- FLY ke treasure
+        -- FLY to treasure
         local reached = flyTo(cf.Position, function() return treasureActive end)
         if not treasureActive then break end
         if not reached or not treasure.Parent then task.wait(0.2); continue end
 
-        -- Snap ke posisi treasure
+        -- Snap to treasure position
         cf = getCF(treasure)
         if cf then
             HRP.CFrame = CFrame.new(cf.Position)
@@ -625,7 +625,7 @@ local function farmTreasures()
             task.wait(0.05)
         end
 
-        -- Kalau takde prompt langsung, notify
+        -- If no prompt found, notify
         if not hasPrompt and treasure.Parent then
             local label = (#selectedTreasure > 0 and selectedTreasure[1] ~= "All Treasures")
                 and table.concat(selectedTreasure, ", ") or "Treasure"
@@ -653,7 +653,7 @@ local function fireAltarPrompt(altar)
 end
 
 local function altarMatchesBloodline(altar)
-    -- Kalau takde pilihan atau "All Bloodlines" dipilih, return semua
+    -- If no selection or "All Bloodlines" selected, return all
     if not selectedBloodline or #selectedBloodline == 0 then return true end
 
     local al = altar.Name:lower()
@@ -710,7 +710,7 @@ end
 
 local function farmMobs()
     local folder=workspace:FindFirstChild("Enemies"); if not folder then return end
-    setNoclip(true) -- Noclip ON untuk mob
+    setNoclip(true)
     while mobActive do
         if justRespawned then while justRespawned and mobActive do task.wait(0.5) end end
         if not mobActive then break end
@@ -730,24 +730,38 @@ local function farmMobs()
         end
         local mobRoot=nearest:FindFirstChild("HumanoidRootPart"); if not mobRoot then task.wait(0.5); continue end
 
-        -- FLY ke mob
+        -- Fly in FRONT of mob (mob faces player)
         local mp=mobRoot.Position; local lk=mobRoot.CFrame.LookVector
-        flyTo(Vector3.new(mp.X-lk.X*mobDistance, mp.Y, mp.Z-lk.Z*mobDistance), function() return mobActive end)
+        local targetPos=Vector3.new(mp.X+lk.X*mobDistance, mp.Y, mp.Z+lk.Z*mobDistance)
+        local reached=flyTo(targetPos, function() return mobActive end)
         task.wait(0.1)
-        if not mobActive or not nearest.Parent then continue end
-        local hum=nearest:FindFirstChildOfClass("Humanoid"); if not hum or hum.Health<=0 then continue end
+        if not mobActive then break end
+        -- If mob gone during flight, wait and rescan
+        if not nearest.Parent then task.wait(1); continue end
+        if not reached then task.wait(0.5); continue end
+
+        local hum=nearest:FindFirstChildOfClass("Humanoid"); if not hum or hum.Health<=0 then task.wait(0.5); continue end
+
+        local attackTimeout=tick()
         while mobActive and nearest.Parent do
             if justRespawned then break end
             local h=nearest:FindFirstChildOfClass("Humanoid"); if not h or h.Health<=0 then break end
+            -- Check we haven't been stuck too long on one mob (60s timeout)
+            if tick()-attackTimeout>60 then break end
             if mobRoot and mobRoot.Parent then
                 local mp2=mobRoot.Position; local lk2=mobRoot.CFrame.LookVector
-                HRP.CFrame=CFrame.new(Vector3.new(mp2.X-lk2.X*mobDistance,mp2.Y,mp2.Z-lk2.Z*mobDistance),Vector3.new(mp2.X,mp2.Y,mp2.Z))
+                -- Stay in front of mob so it faces us and attacks land
+                HRP.CFrame=CFrame.new(
+                    Vector3.new(mp2.X+lk2.X*mobDistance, mp2.Y, mp2.Z+lk2.Z*mobDistance),
+                    Vector3.new(mp2.X, mp2.Y, mp2.Z)
+                )
                 HRP.AssemblyLinearVelocity=Vector3.zero
             end
             pcall(function() ReplicatedStorage.RemoteEvents.Attack:FireServer("Light",{["RootPart"]=HRP}) end)
             task.wait(0.1)
         end
-        task.wait(0.05)
+        -- Wait for mob to properly despawn before rescanning
+        task.wait(0.5)
     end
     stopFlyNoclip()
 end
@@ -773,10 +787,10 @@ local function acceptQuest(npcName)
     task.wait(0.5)
 end
 
--- Quest Slaying — FLY + NOCLIP ke mob
+-- Quest Slaying — FLY + NOCLIP to mob
 local function farmQuestSlaying(npcName,target,lbl)
     local folder=workspace:FindFirstChild("Enemies"); if not folder then return end
-    setNoclip(true) -- Noclip ON untuk quest slaying
+    setNoclip(true)
     while questActive do
         if justRespawned then while justRespawned and questActive do task.wait(0.5) end end
         if not questActive then break end
@@ -794,32 +808,45 @@ local function farmQuestSlaying(npcName,target,lbl)
                 end
             end
         end
-        if not nearest then task.wait(1); continue end
+        if not nearest then
+            Rayfield:Notify({Title="Quest",Content=target.." not found. Waiting...",Duration=2,Image=4483362458})
+            task.wait(2); continue
+        end
         local mobRoot=nearest:FindFirstChild("HumanoidRootPart"); if not mobRoot then task.wait(0.5); continue end
 
-        -- FLY ke mob
-        local questMobTargetPos = (mobRoot.CFrame * CFrame.new(0, 0, mobDistance)).Position
-        flyTo(questMobTargetPos, function() return questActive end)
+        -- Fly in FRONT of mob (same as mob farm)
+        local mp=mobRoot.Position; local lk=mobRoot.CFrame.LookVector
+        local reached=flyTo(Vector3.new(mp.X+lk.X*mobDistance, mp.Y, mp.Z+lk.Z*mobDistance), function() return questActive end)
         task.wait(0.1)
-        if not questActive or not nearest.Parent then continue end
+        if not questActive then break end
+        if not nearest.Parent or not reached then task.wait(1); continue end
+
+        local hum=nearest:FindFirstChildOfClass("Humanoid"); if not hum or hum.Health<=0 then task.wait(0.5); continue end
+
+        local attackTimeout=tick()
         while questActive and nearest.Parent do
             if justRespawned then break end
             local h=nearest:FindFirstChildOfClass("Humanoid"); if not h or h.Health<=0 then break end
+            if tick()-attackTimeout>60 then break end
             if mobRoot and mobRoot.Parent then
                 local mp2=mobRoot.Position; local lk2=mobRoot.CFrame.LookVector
-                HRP.CFrame=CFrame.new(Vector3.new(mp2.X-lk2.X*mobDistance,mp2.Y,mp2.Z-lk2.Z*mobDistance),Vector3.new(mp2.X,mp2.Y,mp2.Z))
+                HRP.CFrame=CFrame.new(
+                    Vector3.new(mp2.X+lk2.X*mobDistance, mp2.Y, mp2.Z+lk2.Z*mobDistance),
+                    Vector3.new(mp2.X, mp2.Y, mp2.Z)
+                )
                 HRP.AssemblyLinearVelocity=Vector3.zero
             end
             pcall(function() ReplicatedStorage.RemoteEvents.Attack:FireServer("Light",{["RootPart"]=HRP}) end)
             task.wait(0.1)
         end
-        task.wait(0.05)
+        -- Wait for mob to despawn before rescanning
+        task.wait(0.5)
     end
 end
 
 -- Quest Harvesting — FLY + NOCLIP ke herb
 local function farmQuestHarvesting(npcName,target,lbl)
-    setNoclip(true) -- Noclip ON untuk quest harvesting
+    setNoclip(true) -- Noclip ON for quest harvesting
     while questActive do
         local prog,pEnd=getProgressFromServer(npcName)
         if not prog then break end
@@ -838,7 +865,7 @@ local function farmQuestHarvesting(npcName,target,lbl)
         local zone=herb:FindFirstChild("HerbZone",true); if not zone then continue end
         local targetCF=getCF(zone); if not targetCF then task.wait(0.2); continue end
 
-        -- FLY ke herb zone
+        -- FLY to herb zone
         local ok=flyTo(targetCF.Position, function() return questActive end)
         if not questActive then break end
         if not ok then task.wait(0.2); continue end
@@ -869,11 +896,11 @@ local function runQuestFarm(lblNPC,lblTarget,lblProg)
         if not detected and selectedQuest then
             acceptQuest(selectedQuest); task.wait(1)
             
-            -- Check kalau QuestData atau SecondQuestData WUJUD
+            -- Check if QuestData or SecondQuestData exists
             local questDataExists = Player:FindFirstChild("QuestData") or Player:FindFirstChild("SecondQuestData")
             
             if not questDataExists then
-                -- QuestData TAK WUJUD = not ready for quest
+                -- QuestData not found = not ready for quest
                 lblNPC:Set("NPC: "..selectedQuest)
                 lblTarget:Set("Target: NOT READY FOR QUEST")
                 lblProg:Set("Progress: -")
@@ -891,7 +918,7 @@ local function runQuestFarm(lblNPC,lblTarget,lblProg)
             if prog then 
                 detected=selectedQuest
             else
-                -- QuestData ada tapi bukan quest ni
+                -- QuestData exists but not this quest
                 task.wait(3); continue
             end
         end
@@ -919,59 +946,80 @@ end
 -- ============================================================
 local function runAlchemy(lblStatus,isLoop)
     if not selectedRecipe then
-        Rayfield:Notify({Title="Alchemy",Content="Please select a recipe first!",Duration=3,Image=4483362458})
+        Rayfield:Notify({Title="Alchemy",Content="Select a recipe first!",Duration=3,Image=4483362458})
         if not isLoop then alchemyActive=false end; return
     end
     local recipe=ALCHEMY_RECIPES[selectedRecipe]; if not recipe then if not isLoop then alchemyActive=false end; return end
     local crafted=0; local target=alchemyCraftAmount
     lblStatus:Set(" Crafting: 0 / "..target)
 
-    -- Server hanya terima amount: 1, 2, 5, 25, 100, 1000
-    -- Kira batch paling besar yang boleh guna
-    local VALID_AMOUNTS = {1000, 100, 25, 5, 2, 1}
-    local function getBatch(remaining)
+    -- Server only accepts: 1, 2, 5, 25, 100, 1000
+    -- Use sub-batch: e.g. target=25 → batch of 5 repeated 5x
+    --                     target=100 → batch of 25 repeated 4x
+    --                     target=1000 → batch of 100 repeated 10x
+    local VALID_AMOUNTS = {1, 2, 5, 25, 100, 1000}
+
+    local function getSubBatch(selected)
+        -- Return the next smaller valid amount below selected
+        local sub = 1
         for _, v in ipairs(VALID_AMOUNTS) do
-            if remaining >= v then return v end
+            if v < selected then sub = v end
         end
-        return 1
+        return sub
     end
 
+    local function getLargestValidBatch(remaining)
+        -- Return largest valid amount that fits in remaining
+        local best = 1
+        for _, v in ipairs(VALID_AMOUNTS) do
+            if v <= remaining then best = v end
+        end
+        return best
+    end
+
+    local subBatch = getSubBatch(target)
+
     while alchemyActive and crafted < target do
-        local batch = getBatch(target - crafted)
+        local remaining = target - crafted
+        -- Use subBatch if it fits, otherwise use largest valid that fits remaining
+        local batch = (remaining >= subBatch) and subBatch or getLargestValidBatch(remaining)
+
         local herbArgs={}
         for i=1,4 do
             local element = recipe.Elements[i]
             local herbName = getBestHerbForElement(element)
             herbArgs[i] = {["Name"]=herbName, ["Variation"]=selectedAlchemyYear}
         end
+
         local ok, result = pcall(function()
             return ReplicatedStorage.RemoteFunctions.Concoct:InvokeServer(herbArgs, batch)
         end)
+
         if ok and type(result)=="table" then
             if result.Success then
                 crafted += batch
                 lblStatus:Set(" Crafting: "..crafted.." / "..target)
                 local itemName = result.ItemName or selectedRecipe
                 if itemName == "Failed Pill" then
-                    Rayfield:Notify({Title="Alchemy",Content="Failed Pill! Potency tak cukup atau recipe tak unlock.",Duration=4,Image=4483362458})
+                    Rayfield:Notify({Title="Alchemy",Content="Failed Pill — potency low or recipe not unlocked.",Duration=4,Image=4483362458})
                 else
                     Rayfield:Notify({Title="Alchemy",Content=itemName.." x"..batch.." ("..crafted.."/"..target..")",Duration=2,Image=4483362458})
                 end
             else
                 local msg = result.Message or "Unknown error"
                 Rayfield:Notify({Title="Alchemy Failed",Content=msg,Duration=4,Image=4483362458})
-                -- Kalau herbs tak cukup, stop terus
                 if msg:find("Not enough") or msg:find("Recipe does not exist") then
                     alchemyActive=false; break
                 end
                 task.wait(1)
             end
         else
-            Rayfield:Notify({Title="Alchemy",Content="Server error. Cuba lagi...",Duration=3,Image=4483362458})
+            Rayfield:Notify({Title="Alchemy",Content="Server error. Retrying...",Duration=3,Image=4483362458})
             task.wait(1)
         end
         task.wait(1.5)
     end
+
     if not isLoop then
         alchemyActive=false; lblStatus:Set(" Done! "..crafted.."x "..selectedRecipe)
         Rayfield:Notify({Title="Alchemy",Content="Done! "..crafted.."x "..selectedRecipe,Duration=4,Image=4483362458})
@@ -1354,20 +1402,26 @@ Tab7:CreateParagraph({Title="Soul Cap Pill",      Content="Base:300 | Yang+Yin+Y
 -- 
 local Tab_Ability = Window:CreateTab(" Ability",4483362458)
 
--- Ability data dari Abilities module
 local ABILITY_DATA = {
-    ["Flying Sword"]  = {Type="Cultivate",     ProgressEnd=1200},
-    ["Qi Sense"]      = {Type="Cultivate",     ProgressEnd=1800},
-    ["Qi Release"]    = {Type="Qi Breakthrough",ProgressEnd=3},
-    ["Qi Pressure"]   = {Type="Qi Breakthrough",ProgressEnd=10},
-    ["Body Refining"] = {Type="Get Damaged",   ProgressEnd=10000},
-    ["Heavy"]         = {Type="Body Breakthrough",ProgressEnd=1},
+    ["Flying Sword"]  = {Type="Cultivate",          ProgressEnd=1200},
+    ["Qi Sense"]      = {Type="Cultivate",          ProgressEnd=1800},
+    ["Qi Release"]    = {Type="Qi Breakthrough",    ProgressEnd=3},
+    ["Qi Pressure"]   = {Type="Qi Breakthrough",    ProgressEnd=10},
+    ["Body Refining"] = {Type="Get Damaged",        ProgressEnd=10000},
+    ["Heavy"]         = {Type="Body Breakthrough",  ProgressEnd=1},
 }
 local abilityNames = {}
 for n in pairs(ABILITY_DATA) do table.insert(abilityNames,n) end
 table.sort(abilityNames)
 
 local selectedAbility = nil
+
+-- Guards to exclude from Get Damaged (they have scripted behaviour / aren't normal mobs)
+local GUARD_BLACKLIST = {
+    ["Professional Guard"] = true,
+    ["Loyal Guard"]        = true,
+    ["Guard"]              = true,
+}
 
 Tab_Ability:CreateSection(" Select Ability")
 Tab_Ability:CreateDropdown({
@@ -1379,18 +1433,14 @@ Tab_Ability:CreateDropdown({
         selectedAbility = opt[1]
         local info = ABILITY_DATA[selectedAbility]
         if info then
-            Rayfield:Notify({
-                Title="Ability",
-                Content=selectedAbility.." | Type: "..info.Type,
-                Duration=3,Image=4483362458
-            })
+            Rayfield:Notify({Title="Ability",Content=selectedAbility.." | "..info.Type,Duration=3,Image=4483362458})
         end
     end
 })
 
 local abilityLblStatus = Tab_Ability:CreateLabel(" Status: Idle")
 
--- Auto cultivate untuk ability type Cultivate
+-- Auto Cultivate
 local function farmAbilityCultivate()
     while abilityActive do
         pcall(function() ReplicatedStorage.RemoteEvents.Cultivate:FireServer() end)
@@ -1398,19 +1448,47 @@ local function farmAbilityCultivate()
     end
 end
 
--- Auto damage untuk Body Refining — lawan mob, server auto add progress bila kena damage
--- Untuk "Get Damaged" — perlu kena attack, cara paling mudah guna mob farm yang dah ada
+-- Auto Qi Breakthrough
+local function farmAbilityQiBreakthrough(needed)
+    local done = 0
+    while abilityActive and done < needed do
+        pcall(function() ReplicatedStorage.RemoteEvents.Breakthrough:FireServer("Qi") end)
+        done += 1
+        abilityLblStatus:Set(" Qi Breakthrough: "..done.."/"..needed)
+        task.wait(1)
+    end
+    abilityActive = false
+    abilityLblStatus:Set(" Done — "..needed.."x Qi Breakthrough fired.")
+    Rayfield:Notify({Title="Ability",Content="Qi Breakthrough done x"..needed,Duration=4,Image=4483362458})
+end
+
+-- Auto Body Breakthrough
+local function farmAbilityBodyBreakthrough(needed)
+    local done = 0
+    while abilityActive and done < needed do
+        pcall(function() ReplicatedStorage.RemoteEvents.Breakthrough:FireServer("Body") end)
+        done += 1
+        abilityLblStatus:Set(" Body Breakthrough: "..done.."/"..needed)
+        task.wait(1)
+    end
+    abilityActive = false
+    abilityLblStatus:Set(" Done — "..needed.."x Body Breakthrough fired.")
+    Rayfield:Notify({Title="Ability",Content="Body Breakthrough done x"..needed,Duration=4,Image=4483362458})
+end
+
+-- Get Damaged — find any non-guard mob and stand in front of it
 local function farmAbilityGetDamaged()
     local folder = workspace:FindFirstChild("Enemies")
     if not folder then
-        Rayfield:Notify({Title="Ability",Content="Enemies folder tak jumpa.",Duration=3,Image=4483362458})
+        Rayfield:Notify({Title="Ability",Content="Enemies folder not found.",Duration=3,Image=4483362458})
         abilityActive = false; return
     end
     setNoclip(true)
     while abilityActive do
-        -- Cari mob terdekat mana-mana
         local nearest, shortest = nil, math.huge
         for _, mob in pairs(folder:GetChildren()) do
+            -- Skip guards
+            if GUARD_BLACKLIST[mob.Name] then continue end
             local hum = mob:FindFirstChildOfClass("Humanoid")
             if hum and hum.Health > 0 then
                 local ok, pos = pcall(function() return mob:GetPivot().Position end)
@@ -1420,24 +1498,33 @@ local function farmAbilityGetDamaged()
                 end
             end
         end
-        if not nearest then task.wait(2); continue end
+        if not nearest then
+            Rayfield:Notify({Title="Ability",Content="No valid mob found. Waiting...",Duration=2,Image=4483362458})
+            task.wait(3); continue
+        end
         local mobRoot = nearest:FindFirstChild("HumanoidRootPart")
         if not mobRoot then task.wait(0.5); continue end
-        -- Fly ke depan mob supaya kena hit
-        local mp = mobRoot.Position
-        local lk = mobRoot.CFrame.LookVector
-        flyTo(Vector3.new(mp.X + lk.X * 3, mp.Y, mp.Z + lk.Z * 3), function() return abilityActive end)
-        task.wait(0.5)
-        -- Biar mob hit kita beberapa kali
+
+        -- Stand IN FRONT of mob so it hits us
+        local mp = mobRoot.Position; local lk = mobRoot.CFrame.LookVector
+        flyTo(Vector3.new(mp.X+lk.X*3, mp.Y, mp.Z+lk.Z*3), function() return abilityActive end)
+
         local t0 = tick()
-        while abilityActive and tick() - t0 < 5 do
+        while abilityActive and tick()-t0 < 6 do
+            if not nearest.Parent then break end
+            local h = nearest:FindFirstChildOfClass("Humanoid")
+            if not h or h.Health <= 0 then break end
             if mobRoot and mobRoot.Parent then
-                local mp2 = mobRoot.Position; local lk2 = mobRoot.CFrame.LookVector
-                HRP.CFrame = CFrame.new(Vector3.new(mp2.X + lk2.X * 3, mp2.Y, mp2.Z + lk2.Z * 3))
+                local mp2=mobRoot.Position; local lk2=mobRoot.CFrame.LookVector
+                HRP.CFrame = CFrame.new(
+                    Vector3.new(mp2.X+lk2.X*3, mp2.Y, mp2.Z+lk2.Z*3),
+                    Vector3.new(mp2.X, mp2.Y, mp2.Z)
+                )
                 HRP.AssemblyLinearVelocity = Vector3.zero
             end
-            task.wait(0.1)
+            task.wait(0.15)
         end
+        task.wait(0.5)
     end
     stopFlyNoclip()
 end
@@ -1449,27 +1536,22 @@ Tab_Ability:CreateToggle({
     Callback=function(val)
         if val then
             if not selectedAbility then
-                Rayfield:Notify({Title="Ability",Content="Pilih ability dulu!",Duration=3,Image=4483362458}); return
+                Rayfield:Notify({Title="Ability",Content="Select an ability first!",Duration=3,Image=4483362458}); return
             end
             local info = ABILITY_DATA[selectedAbility]
             if not info then return end
             abilityActive = true
             abilityLblStatus:Set(" Farming: "..selectedAbility.." | "..info.Type)
-            Rayfield:Notify({Title="Ability",Content="Start: "..selectedAbility,Duration=3,Image=4483362458})
+            Rayfield:Notify({Title="Ability",Content="Started: "..selectedAbility,Duration=3,Image=4483362458})
             task.spawn(function()
                 if info.Type == "Cultivate" then
                     farmAbilityCultivate()
                 elseif info.Type == "Get Damaged" then
                     farmAbilityGetDamaged()
-                elseif info.Type == "Qi Breakthrough" or info.Type == "Body Breakthrough" then
-                    -- Jenis ni kena buat breakthrough sendiri — script cuma inform je
-                    Rayfield:Notify({
-                        Title="Ability",
-                        Content=selectedAbility.." perlukan "..info.Type.." x"..info.ProgressEnd..". Kena buat sendiri.",
-                        Duration=8,Image=4483362458
-                    })
-                    abilityActive = false
-                    abilityLblStatus:Set(" "..info.Type.." — buat sendiri x"..info.ProgressEnd)
+                elseif info.Type == "Qi Breakthrough" then
+                    farmAbilityQiBreakthrough(info.ProgressEnd)
+                elseif info.Type == "Body Breakthrough" then
+                    farmAbilityBodyBreakthrough(info.ProgressEnd)
                 end
             end)
         else
@@ -1482,12 +1564,12 @@ Tab_Ability:CreateToggle({
 })
 
 Tab_Ability:CreateSection(" Info")
-Tab_Ability:CreateParagraph({Title="Flying Sword",   Content="Type: Cultivate | Kena cultivate 1200s"})
-Tab_Ability:CreateParagraph({Title="Qi Sense",       Content="Type: Cultivate | Kena cultivate 1800s"})
-Tab_Ability:CreateParagraph({Title="Qi Release",     Content="Type: Qi Breakthrough | Kena buat 3x breakthrough"})
-Tab_Ability:CreateParagraph({Title="Qi Pressure",    Content="Type: Qi Breakthrough | Kena buat 10x breakthrough"})
-Tab_Ability:CreateParagraph({Title="Body Refining",  Content="Type: Get Damaged | Kena terima 10000 damage"})
-Tab_Ability:CreateParagraph({Title="Heavy",          Content="Type: Body Breakthrough | Kena buat 1x body breakthrough"})
+Tab_Ability:CreateParagraph({Title="Flying Sword",   Content="Type: Cultivate | Need 1200s cultivating"})
+Tab_Ability:CreateParagraph({Title="Qi Sense",       Content="Type: Cultivate | Need 1800s cultivating"})
+Tab_Ability:CreateParagraph({Title="Qi Release",     Content="Type: Qi Breakthrough | Auto fires 3x breakthrough"})
+Tab_Ability:CreateParagraph({Title="Qi Pressure",    Content="Type: Qi Breakthrough | Auto fires 10x breakthrough"})
+Tab_Ability:CreateParagraph({Title="Body Refining",  Content="Type: Get Damaged | Stands in front of mob to take 10000 dmg"})
+Tab_Ability:CreateParagraph({Title="Heavy",          Content="Type: Body Breakthrough | Auto fires 1x body breakthrough"})
 
 -- 
 --   TAB 9 SETTINGS  
@@ -1561,7 +1643,7 @@ Tab8:CreateButton({Name=" Destroy GUI",
 -- ============================================================
 Rayfield:Notify({
    Title="MELAYU-HUB",
-   Content="Loaded by SIGMA.",
+   Content="v33 Loaded by SIGMA.",
    Duration=6,
    Image=4483362458,
 })
